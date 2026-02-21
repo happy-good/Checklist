@@ -17,7 +17,7 @@ function renderEditView(urlsToEdit = ['', '', '']) {
                 <label for="url3">Website 3</label>
                 <input type="text" id="url3" placeholder="yetanother.org" value="${urlsToEdit[2] || ''}">
             </div>
-            <button type="submit">Save Links</button>
+            <button type="submit">저장</button>
         </form>
     `;
 
@@ -29,7 +29,6 @@ function renderLinksView(urls) {
     mainElement.innerHTML = `
         <div class="header-container">
             <h1>사이트 관리</h1>
-            <button class="edit-button">Edit</button>
         </div>
     `;
 
@@ -61,7 +60,11 @@ function renderLinksView(urls) {
 
     mainElement.appendChild(linkContainer);
 
-    const editButton = mainElement.querySelector('.edit-button');
+    const editButton = document.createElement('button');
+    editButton.className = 'edit-button';
+    editButton.textContent = 'Edit';
+    mainElement.appendChild(editButton);
+
     editButton.addEventListener('click', () => {
         renderEditView(savedUrls);
     });

@@ -20,6 +20,7 @@ h1 {
     font-size: 2.5rem;
     color: #fff;
     margin-bottom: 2rem;
+    font-family: 'Gungsuh', serif;
 }
 
 form {
@@ -44,7 +45,7 @@ label {
     font-size: 0.9rem;
 }
 
-input[type="url"] {
+input[type="text"] {
     width: 100%;
     padding: 12px 15px;
     border: 1px solid #555;
@@ -56,7 +57,7 @@ input[type="url"] {
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-input[type="url"]:focus {
+input[type="text"]:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
@@ -82,7 +83,7 @@ button[type="submit"]:hover {
 
 .header-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 2rem;
 }
@@ -102,6 +103,10 @@ button[type="submit"]:hover {
     font-size: 0.9rem;
     font-weight: 500;
     transition: background-color 0.3s, transform 0.2s;
+    display: block;
+    width: -moz-fit-content;
+    width: fit-content;
+    margin: 2rem auto 0;
 }
 
 .edit-button:hover {
