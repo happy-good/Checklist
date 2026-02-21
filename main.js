@@ -4,6 +4,23 @@ import { quotes as newQuotes } from './quotes-database-new.js';
 const mainElement = document.querySelector('main');
 let savedUrls = [];
 
+// Function to save URLs to localStorage
+function saveUrlsToStorage(urls) {
+    localStorage.setItem('savedUrls', JSON.stringify(urls));
+    savedUrls = urls;
+}
+
+// Function to load URLs from localStorage
+function loadUrlsFromStorage() {
+    const storedUrls = localStorage.getItem('savedUrls');
+    if (storedUrls) {
+        savedUrls = JSON.parse(storedUrls);
+        return savedUrls;
+    }
+    return null;
+}
+
+
 // A simple URL validation function
 function isValidUrl(string) {
     // This regex checks for a basic domain structure.
@@ -127,8 +144,9 @@ function renderLinksView(urls) {
 
 function handleFormSubmit(event) {
     event.preventDefault();
-    savedUrls = Array.from(document.querySelectorAll('#urlForm input')).map(input => input.value.trim()).filter(url => url !== '');
-    renderLinksView(savedUrls);
+    const urls = Array.from(document.querySelectorAll('#urlForm input')).map(input => input.value.trim()).filter(url => url !== '');
+    saveUrlsToStorage(urls);
+    renderLinksView(urls);
 }
 
 function showDailyThought() {
@@ -170,5 +188,14 @@ function showDailyThought() {
 
 
 // Initial render
-renderEditView();
-showDailyThought();
+function initialize() {
+    const loadedUrls = loadUrlsFromStorage();
+    if (loadedUrls && loadedUrls.length > 0) {
+        renderLinksView(loadedUrls);
+    } else {
+        renderEditView();
+    }
+    showDailyThought();
+}
+
+initialize();
