@@ -1,28 +1,83 @@
+import { quotes as initialQuotes } from './quotes-database.js';
+import { quotes as newQuotes } from './quotes-database-new.js';
+
 const mainElement = document.querySelector('main');
 let savedUrls = [];
 
-function renderEditView(urlsToEdit = ['', '', '']) {
+// A simple URL validation function
+function isValidUrl(string) {
+    // This regex checks for a basic domain structure.
+    const pattern = new RegExp('^(https?:\/\/)?'+ // protocol
+    '((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|'+ // domain name
+    '((\d{1,3}\.){3}\d{1,3}))'+ // OR ip (v4) address
+    '(\:\d+)?(\/[-a-z\d%_.~+]*)*'+ // port and path
+    '(\?[;&a-z\d%_.~+=-]*)?'+ // query string
+    '(\#[-a-z\d_]*)?$','i'); // fragment locator
+    return !!pattern.test(string);
+}
+
+function renderEditView(urlsToEdit = ['', '', '', '', '', '']) {
     mainElement.innerHTML = `
         <h1>사이트 관리</h1>
-        <form id="urlForm">
-            <div class="input-group">
-                <label for="url1">Website 1</label>
-                <input type="text" id="url1" placeholder="example.com" value="${urlsToEdit[0] || ''}" required>
-            </div>
-            <div class="input-group">
-                <label for="url2">Website 2</label>
-                <input type="text" id="url2" placeholder="anothersite.net" value="${urlsToEdit[1] || ''}">
-            </div>
-            <div class="input-group">
-                <label for="url3">Website 3</label>
-                <input type="text" id="url3" placeholder="yetanother.org" value="${urlsToEdit[2] || ''}">
-            </div>
-            <button type="submit">저장</button>
+        <form id="urlForm" novalidate>
+            ${[1, 2, 3, 4, 5, 6].map(i => `
+                <div class="input-group">
+                    <label for="url${i}">Website ${i}</label>
+                    <input type="text" id="url${i}" placeholder="example.com" value="${urlsToEdit[i - 1] || ''}">
+                    <span class="message-span"></span>
+                </div>
+            `).join('')}
+            <button type="submit" class="hidden">저장</button>
         </form>
     `;
 
     const form = document.getElementById('urlForm');
+    const inputs = form.querySelectorAll('input[type="text"]');
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    function validateAndToggleButton() {
+        let allValid = true;
+        let atLeastOneUrl = false;
+
+        inputs.forEach(input => {
+            const url = input.value.trim();
+            const messageSpan = input.nextElementSibling;
+
+            if (url) {
+                atLeastOneUrl = true;
+                if (isValidUrl(url)) {
+                    messageSpan.textContent = '정상적인 주소입니다.';
+                    messageSpan.className = 'message-span success';
+                } else {
+                    allValid = false;
+                    messageSpan.textContent = '정상적인 주소가 아닙니다.';
+                    messageSpan.className = 'message-span error';
+                }
+            } else {
+                messageSpan.textContent = '';
+                messageSpan.className = 'message-span';
+            }
+        });
+
+        if (!atLeastOneUrl) {
+            allValid = false;
+        }
+
+        if (allValid) {
+            submitButton.classList.remove('hidden');
+        } else {
+            submitButton.classList.add('hidden');
+        }
+    }
+
+    inputs.forEach(input => {
+        input.addEventListener('input', validateAndToggleButton);
+    });
+
     form.addEventListener('submit', handleFormSubmit);
+
+    // Initial validation check
+    validateAndToggleButton();
 }
 
 function renderLinksView(urls) {
@@ -41,7 +96,7 @@ function renderLinksView(urls) {
         link.className = 'url-button';
 
         let fullUrl = url;
-        if (!/^https?:\/\//i.test(fullUrl)) {
+        if (!/^https?:/i.test(fullUrl)) {
             fullUrl = 'https://' + fullUrl;
         }
         link.href = fullUrl;
@@ -72,16 +127,48 @@ function renderLinksView(urls) {
 
 function handleFormSubmit(event) {
     event.preventDefault();
-    savedUrls = [
-        document.getElementById('url1').value,
-        document.getElementById('url2').value,
-        document.getElementById('url3').value
-    ].filter(url => url.trim() !== '');
-
-    if (savedUrls.length > 0) {
-        renderLinksView(savedUrls);
-    }
+    savedUrls = Array.from(document.querySelectorAll('#urlForm input')).map(input => input.value.trim()).filter(url => url !== '');
+    renderLinksView(savedUrls);
 }
+
+function showDailyThought() {
+    const thoughtContainer = document.getElementById('daily-thought-container');
+    
+    let currentDatabaseName = localStorage.getItem('currentQuoteDB') || 'initial';
+    let usedQuotes = JSON.parse(localStorage.getItem('usedQuotes')) || [];
+    
+    let currentQuotes = (currentDatabaseName === 'initial') ? initialQuotes : newQuotes;
+    let availableQuotes = currentQuotes.filter(q => !usedQuotes.includes(q));
+
+    if (availableQuotes.length === 0) {
+        // Switch databases
+        if (currentDatabaseName === 'initial') {
+            currentDatabaseName = 'new';
+            currentQuotes = newQuotes;
+        } else {
+            currentDatabaseName = 'initial';
+            currentQuotes = initialQuotes;
+        }
+
+        usedQuotes = [];
+        localStorage.setItem('currentQuoteDB', currentDatabaseName);
+        localStorage.setItem('usedQuotes', JSON.stringify(usedQuotes));
+        availableQuotes = currentQuotes;
+    }
+
+    const randomIndex = Math.floor(Math.random() * availableQuotes.length);
+    const quote = availableQuotes[randomIndex];
+
+    usedQuotes.push(quote);
+    localStorage.setItem('usedQuotes', JSON.stringify(usedQuotes));
+
+    thoughtContainer.innerHTML = `
+        <h2>오늘의 긍정적인 말</h2>
+        <p>${quote}</p>
+    `;
+}
+
 
 // Initial render
 renderEditView();
+showDailyThought();
