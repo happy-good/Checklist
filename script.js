@@ -3,7 +3,6 @@ const buttonArea = document.getElementById("buttonArea");
 const completeBtn = document.getElementById("completeBtn");
 const editBtn = document.getElementById("editBtn");
 const todayTitle = document.getElementById("todayTitle");
-const midnightTimer = document.getElementById("midnightTimer");
 
 let tasks = [];
 
@@ -16,35 +15,14 @@ function getLocalDateString() {
 
 todayTitle.innerText = getLocalDateString();
 
-function updateMidnightTimer() {
-    const now = new Date();
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    const diff = midnight - now;
+function dailyResetCheck() {
+    const currentDate = getLocalDateString();
+    const lastResetDate = localStorage.getItem('lastResetDate');
 
-    const hours = Math.floor(diff / 1000 / 60 / 60);
-    const minutes = Math.floor((diff / 1000 / 60) % 60);
-    const seconds = Math.floor((diff / 1000) % 60);
-
-    midnightTimer.innerText =
-        `⏳ 자정까지 ${String(hours).padStart(2, '0')}:` +
-        `${String(minutes).padStart(2, '0')}:` +
-        `${String(seconds).padStart(2, '0')}`;
-}
-
-setInterval(updateMidnightTimer, 1000);
-updateMidnightTimer();
-
-function scheduleMidnightReset() {
-    const now = new Date();
-    const nextMidnight = new Date();
-    nextMidnight.setHours(24, 0, 0, 0);
-    const diff = nextMidnight - now;
-
-    setTimeout(() => {
+    if (lastResetDate !== currentDate) {
         resetDoneState();
-        scheduleMidnightReset();
-    }, diff);
+        localStorage.setItem('lastResetDate', currentDate);
+    }
 }
 
 function resetDoneState() {
@@ -52,8 +30,15 @@ function resetDoneState() {
     saved.forEach(t => t.done = false);
     localStorage.setItem("tasks", JSON.stringify(saved));
     todayTitle.innerText = getLocalDateString();
-    renderButtons();
+
+    // 할 일 목록 화면일 때만 버튼을 다시 렌더링
+    if (!buttonArea.classList.contains("hidden")) {
+        renderButtons();
+    }
 }
+
+dailyResetCheck();
+setInterval(dailyResetCheck, 1000 * 60);
 
 for (let i = 0; i < 10; i++) {
     const input = document.createElement("input");
@@ -120,6 +105,9 @@ function renderButtons() {
     buttonArea.classList.remove("hidden");
     editBtn.classList.remove("hidden");
 
+    const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    tasks = savedTasks.filter(t => t.text && t.text.trim() !== '');
+
     tasks.forEach((task, index) => {
         const btn = document.createElement("button");
         btn.className = "task-btn";
@@ -142,8 +130,12 @@ function renderButtons() {
         cancelBtn.innerText = 'X';
         cancelBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            task.done = false;
-            localStorage.setItem("tasks", JSON.stringify(tasks));
+            const allTasks = JSON.parse(localStorage.getItem("tasks"));
+            const targetTask = allTasks.find(t => t.text === task.text);
+            if (targetTask) {
+                targetTask.done = false;
+            }
+            localStorage.setItem("tasks", JSON.stringify(allTasks));
             renderButtons();
         });
 
@@ -155,8 +147,12 @@ function renderButtons() {
 
         if (!task.done) {
             btn.addEventListener("click", () => {
-                task.done = true;
-                localStorage.setItem("tasks", JSON.stringify(tasks));
+                const allTasks = JSON.parse(localStorage.getItem("tasks"));
+                const targetTask = allTasks.find(t => t.text === task.text);
+                if (targetTask) {
+                    targetTask.done = true;
+                }
+                localStorage.setItem("tasks", JSON.stringify(allTasks));
                 renderButtons();
             });
         }
@@ -172,5 +168,3 @@ editBtn.addEventListener("click", () => {
     editBtn.classList.add("hidden");
     loadInputs();
 });
-
-scheduleMidnightReset();
