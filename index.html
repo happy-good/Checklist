@@ -4,20 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>체크리스트</title>
-<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=2.3"> <!-- 캐시 문제 해결을 위한 버전 업데이트 -->
 </head>
 
 <body>
 
 <div class="card">
+<h2 id="todayTitle"></h2>
 
-  <h2 id="todayTitle"></h2>
+<!-- 화면1 -->
+<div id="screen1" class="section">
+  <input type="number" id="countInput" placeholder="몇개의 항목을 생성하실건가요?" min="1" max="50">
+  <button class="main-btn" id="goToScreen2">다음</button>
+</div>
 
-  <div id="inputArea" class="input-area"></div>
-  <button id="completeBtn" class="main-btn">완료</button>
+<!-- 화면2 -->
+<div id="screen2" class="section hidden"></div>
+<button id="backTo1" class="back-btn hidden">뒤로가기</button>
+<button id="completeBtn" class="main-btn hidden">완료</button>
 
-  <div id="buttonArea" class="hidden"></div>
-  <button id="editBtn" class="main-btn hidden">전체 수정</button>
+<!-- 화면3 -->
+<div id="screen3" class="section hidden"></div>
+<button id="backTo2" class="back-btn hidden">뒤로가기</button>
 
 </div>
 

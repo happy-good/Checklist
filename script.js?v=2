@@ -1,0 +1,189 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // Screens
+    const screen1 = document.getElementById('screen1');
+    const screen2 = document.getElementById('screen2');
+    const screen3 = document.getElementById('screen3');
+
+    // Screen 1 elements
+    const initialQuantityInput = document.getElementById('initialQuantity');
+    const initialConfirmBtn = document.getElementById('initialConfirmBtn');
+
+    // Screen 2 elements
+    const backBtn = document.getElementById('backBtn');
+    const inputTitle = document.getElementById('inputTitle');
+    const inputArea = document.getElementById('inputArea');
+    const completeBtn = document.getElementById('completeBtn');
+
+    // Screen 3 elements
+    const todayTitle = document.getElementById('todayTitle');
+    const buttonArea = document.getElementById('buttonArea');
+    const editBtn = document.getElementById('editBtn');
+
+    // Global state
+    let tasks = [];
+
+    // --- UTILITY FUNCTIONS ---
+    const getLocalDateString = () => {
+        const d = new Date();
+        return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+    };
+
+    const showScreen = (screenToShow) => {
+        [screen1, screen2, screen3].forEach(screen => screen.classList.add('hidden'));
+        screenToShow.classList.remove('hidden');
+    };
+
+    const saveTasks = () => localStorage.setItem('tasks', JSON.stringify(tasks));
+    const loadTasks = () => JSON.parse(localStorage.getItem('tasks') || '[]');
+
+    // --- UI RENDERING FUNCTIONS ---
+    const createInputFields = (quantity, existingTasks = []) => {
+        inputArea.innerHTML = '';
+        inputTitle.innerText = `${quantity}개의 항목 입력`;
+        for (let i = 0; i < quantity; i++) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'task-input';
+            input.placeholder = `항목 ${i + 1}`;
+            if (existingTasks[i] && existingTasks[i].text) {
+                input.value = existingTasks[i].text;
+            }
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const nextInput = e.target.nextElementSibling;
+                    if (nextInput && nextInput.tagName === 'INPUT') {
+                        nextInput.focus();
+                    } else {
+                        completeBtn.focus();
+                    }
+                }
+            });
+            inputArea.appendChild(input);
+        }
+    };
+
+    const renderButtons = () => {
+        buttonArea.innerHTML = '';
+        todayTitle.innerText = getLocalDateString();
+        tasks.forEach(task => {
+            const btn = document.createElement('button');
+            btn.className = 'task-btn';
+            btn.classList.toggle('done', task.done);
+
+            const text = document.createElement('span');
+            text.innerText = task.text;
+            btn.appendChild(text);
+
+            const doneContainer = document.createElement('div');
+            doneContainer.className = 'done-container';
+            doneContainer.innerHTML = `<span class="status-text">완료</span><span class="cancel-btn">X</span>`;
+            btn.appendChild(doneContainer);
+
+            if (!task.done) {
+                btn.addEventListener('click', () => {
+                    task.done = true;
+                    saveTasks();
+                    renderButtons();
+                });
+            } else {
+                doneContainer.querySelector('.cancel-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    task.done = false;
+                    saveTasks();
+                    renderButtons();
+                });
+            }
+            buttonArea.appendChild(btn);
+        });
+    };
+
+    // --- MAIN APP FLOW FUNCTIONS ---
+
+    function goToInputScreen() {
+        const quantity = parseInt(initialQuantityInput.value, 10);
+        if (isNaN(quantity) || quantity <= 0) {
+            initialQuantityInput.value = '';
+            return; 
+        }
+        tasks = Array.from({ length: quantity }, () => ({ text: '', done: false }));
+        createInputFields(quantity);
+        showScreen(screen2);
+    }
+
+    function completeAndGoToButtonScreen() {
+        const inputs = document.querySelectorAll('#inputArea .task-input');
+        const finalTasks = [];
+        inputs.forEach((input, index) => {
+            const text = input.value.trim();
+            if (text) {
+                const isDone = tasks[index] ? tasks[index].done : false;
+                finalTasks.push({ text: text, done: isDone });
+            }
+        });
+        tasks = finalTasks;
+
+        if (tasks.length === 0) {
+            localStorage.removeItem('tasks');
+            showScreen(screen1);
+            initialQuantityInput.value = '';
+            return;
+        }
+        saveTasks();
+        renderButtons();
+        showScreen(screen3);
+    }
+
+    function goToEditScreen() {
+        tasks = loadTasks();
+        createInputFields(tasks.length, tasks);
+        showScreen(screen2);
+    }
+
+    function dailyResetCheck() {
+        const currentDate = getLocalDateString();
+        const lastResetDate = localStorage.getItem('lastResetDate');
+        if (lastResetDate !== currentDate) {
+            tasks = loadTasks();
+            tasks.forEach(task => task.done = false);
+            saveTasks();
+            localStorage.setItem('lastResetDate', currentDate);
+            if (!screen3.classList.contains('hidden')) {
+                renderButtons();
+            }
+        }
+    }
+
+    function initializeApp() {
+        dailyResetCheck();
+        const loadedTasks = loadTasks();
+        if (loadedTasks.length > 0) {
+            tasks = loadedTasks;
+            renderButtons();
+            showScreen(screen3);
+        } else {
+            showScreen(screen1);
+            initialQuantityInput.value = '';
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    initialConfirmBtn.addEventListener('click', goToInputScreen);
+    initialQuantityInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            goToInputScreen();
+        }
+    });
+
+    completeBtn.addEventListener('click', completeAndGoToButtonScreen);
+    editBtn.addEventListener('click', goToEditScreen);
+    backBtn.addEventListener('click', () => {
+        showScreen(screen1);
+        initialQuantityInput.value = '';
+    });
+
+    // --- START THE APP ---
+    initializeApp();
+    setInterval(dailyResetCheck, 1000 * 60);
+});
